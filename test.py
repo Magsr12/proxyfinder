@@ -18,6 +18,7 @@ GREEN = BOLD + '\033[32m'
 
 # PAGE WHERE THE PROXIES SERVERS ARE
 HTTP_PROXIES = "https://www.freeproxy.world/?port=80"
+HTTP_PROXIES_PAGE_2 = "https://www.freeproxy.world/?port=80&page=2"
 
 # HEADERS BELOW HERE TO PREVINE HTTP PAGE ERROR
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -40,35 +41,27 @@ def test_proxies():
         try:
             resp = requests.post(test_url, proxies=proxy, headers=hdr)
             if resp.status_code == 200:
-                print(GREEN + "     {} seems UP, received response 200 from {}".format(proxy['http'], test_url) + NORMAL)
+                print(GREEN + "  {} seems UP, received response 200 from {}".format(z, test_url) + NORMAL)
                 time.sleep(0.4)
                 http_on.append(proxy['http'])
             else:
-                print(RED + "   " + proxy['http'] + " is down, skipping..." + NORMAL)
+                print(RED + "   " + z + " is down, skipping..." + NORMAL)
         except Exception as f:
-            print(RED + "   " + proxy['http'] + " is down, skipping..." + NORMAL)
-    print("Found ", len(http_on), "proxies online.")
+            print(RED + "   " + z + " appears to be broken, try --verbose to see it." + NORMAL)
+            time.sleep(0.8)
+            pass
+    print("_______________________________________")
+    print("\nFound ", len(http_on), "proxy servers online.")
+    print("_______________________________________\n")
     for r in http_on:
         print(r)
+    if (len(http_on)) == 0:
+        print(RED + "Appears to be empty results in this search, trying to find in another page" + NORMAL)
+        time.sleep(2)
+        main(PAGE=2, SHOW_TABLES=False)
             
-                 
-      
-    exit()
-    proxies_list = {
-        'http': 'http://135.125.216.93:80'
-    }
-    test_url = "http://testphp.vulnweb.com"
-    try:
-        print("[*] Opening connections with {} through {}".format(test_url))
-        resp = requests.post(test_url, proxies=proxies_list)
-        for i in resp:
-            if "200" in i:
-                print(GREEN + "[!] Host {} seems UP, received response 200 from {}".format(proxies_list['http'], test_url))
-        print(resp)
-    except Exception as proxy_error:
-        print(RED + "   " + proxies_list['http'] + " is down, skipping...")
 
-def main(verbose=False):
+def main(PAGE, verbose=False, SHOW_TABLES=True):
     global IP_LIST
     global PORT_LIST
     results = PrettyTable()
@@ -79,7 +72,11 @@ def main(verbose=False):
     IP_LIST = []
     PORT_LIST = []
     COUNTRY_LIST =[]
-    r = requests.get(HTTP_PROXIES, headers=hdr) #SELECT HEADERS TO PREVINE HTTP PAGE ERROR
+    if PAGE == 1:
+        r = requests.get(HTTP_PROXIES, headers=hdr) #SELECT HEADERS TO PREVINE HTTP PAGE ERROR
+    elif PAGE == 2:
+        r = requests.get(HTTP_PROXIES_PAGE_2, headers=hdr)
+
     response = BeautifulSoup(r.content, 'lxml')
     for ip in response.find_all('td', {'class': 'show-ip-div'}): #RETRIEVE ONLY IP'S
         IP_LIST.append(ip.get_text().strip())
@@ -95,15 +92,14 @@ def main(verbose=False):
 
     for country_retrieved, ip_retrieved, port_retrieved in zip(COUNTRY_LIST, IP_LIST, PORT_LIST):
         results.add_row([country_retrieved, ip_retrieved, port_retrieved])
-    
-    print(results)
-        
-
-    #print(len(IP_LIST))
-    #print(len(PORT_LIST))
-    
-
-NORMAL
-main()
-test_proxies()
+    if SHOW_TABLES is False:
+        pass
+    else:
+        print(results)
+        asp = input("Do you want to proceed to testing them? [Y/n]")
+        if asp == 'n':
+            exit()
+        else:
+            test_proxies()        
+main(1)
 
