@@ -1,3 +1,4 @@
+
 import requests
 import os
 import time
@@ -27,7 +28,49 @@ hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML,
 'Connection': 'keep-alive'}
 
 
+def test_proxies():
+    test_url = "http://testphp.vulnweb.com" #URL FOR TESTING HTTP PROXIES
+    http_on = []
+    for z, y in zip(IP_LIST, PORT_LIST):
+        proxy = {
+            'http': 'http://' + z + ":" + y
+        }
+        #proxy = ("http://" + z + ":" + y) #FORMATTING TEXT TO PROXY:PORT (192.168.25.354:80)
+        print("Opening connections with {} through {}".format(test_url, proxy['http']))
+        try:
+            resp = requests.post(test_url, proxies=proxy, headers=hdr)
+            if resp.status_code == 200:
+                print(GREEN + "     {} seems UP, received response 200 from {}".format(proxy['http'], test_url) + NORMAL)
+                time.sleep(0.4)
+                http_on.append(proxy['http'])
+            else:
+                print(RED + "   " + proxy['http'] + " is down, skipping..." + NORMAL)
+        except Exception as f:
+            print(RED + "   " + proxy['http'] + " is down, skipping..." + NORMAL)
+    print("Found ", len(http_on), "proxies online.")
+    for r in http_on:
+        print(r)
+            
+                 
+      
+    exit()
+    proxies_list = {
+        'http': 'http://135.125.216.93:80'
+    }
+    test_url = "http://testphp.vulnweb.com"
+    try:
+        print("[*] Opening connections with {} through {}".format(test_url))
+        resp = requests.post(test_url, proxies=proxies_list)
+        for i in resp:
+            if "200" in i:
+                print(GREEN + "[!] Host {} seems UP, received response 200 from {}".format(proxies_list['http'], test_url))
+        print(resp)
+    except Exception as proxy_error:
+        print(RED + "   " + proxies_list['http'] + " is down, skipping...")
+
 def main(verbose=False):
+    global IP_LIST
+    global PORT_LIST
     results = PrettyTable()
     results.field_names = ["COUNTRY", "IP", "PORT"]
     results.align["IP"] = "l" #ALIGN RESULTS TO THE LEFT SIDE
@@ -60,5 +103,7 @@ def main(verbose=False):
     #print(len(PORT_LIST))
     
 
+NORMAL
 main()
+test_proxies()
 
