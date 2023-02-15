@@ -1,0 +1,12 @@
+requests
+sys
+datetime
+time
+colorama
+argparse
+os
+certifi
+bs4
+threading
+prettytable
+requests[socks]
