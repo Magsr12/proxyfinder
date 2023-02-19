@@ -1,4 +1,4 @@
-# ProxyFinder [![Python 3.x](https://img.shields.io/badge/3.x-yellow.svg)](https://www.python.org/) [![License][![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+# ProxyFinder [![Python 3.x](https://img.shields.io/badge/3.x-yellow.svg)](https://www.python.org/) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ====
 
 **Proxyfinder** is a tool to search some proxies around the web, it can fetch this values and test one by one.
