@@ -8,11 +8,12 @@ import sys
 import datetime
 import os
 import time
+import queue
 import colorama
 import argparse
 import certifi
+import threading
 from bs4 import BeautifulSoup
-from threading import Thread
 from prettytable import PrettyTable
 
 #HEADERS TO PREVIVE SOME ERRORS IN LOADING PAGE
@@ -32,6 +33,8 @@ banner = """
 ╚═╝░░░░░╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░╚═╝╚═╝░░╚══╝╚═════╝░╚══════╝╚═╝░░╚═╝{}
 """.format(__version__)
 
+#Start colors 
+colorama.init()
 BOLD = '\033[1m'
 CYAN = BOLD + '\033[36m'
 NORMAL = '\033[0;39m '
@@ -62,14 +65,20 @@ HTTPS_ON = []
 SOCKS_ON = []
 
 
+def multithreading(thread):
+    print("Starting {} threads".format(thread))
+    for x in range(THREAD_VALUE):
+        t = threading.Thread(target=test_proxies, args=(protocol,))
+        t.start()
+        t.join()
 
 def freeproxyworld():
     print("Starting Proxyfinder...")
-    time.sleep(2)
+    time.sleep(1)
     if len(PROTOCOL_LIST) == 0:
         print("You have not provide an proxy type (HTTP|HTTPS|SOCKS4|SOCKS5), setting HTTP by default")
         PROTOCOL_LIST.append("http")
-        time.sleep(2)
+        time.sleep(1)
     # CREATING AN TABLE TO SIMPLIFY READING
     print("Creating tables to retrieve page results...")
     time.sleep(1) 
@@ -80,7 +89,7 @@ def freeproxyworld():
     results.align["ANONYMITY"] = "l"
     # HERE STARTS THE ENGINE
     for protocol in PROTOCOL_LIST:
-        print("Searching for {} proxies in {} with {} timeout(ms)".format(protocol.upper(), PROXIES_SITE, TIME_OUT))
+        print("\nSearching for {} proxies in {} with {} timeout(ms)".format(protocol.upper(), PROXIES_SITE, TIME_OUT))
         #LETS START SEARCHING IN OUR SITES PORTS DEFINED IN PORT_LIST (ITS NECESSARY SET UP PORT IN PORT_LIST TO DISCOVER OR IT WILL NOT WORK)
         for port in PORT_LIST:
             for n in ANON_LEVEL:
@@ -104,9 +113,10 @@ def freeproxyworld():
             for x in range(int(len(IP_PORT))):
                 x = x + 1
             if dont_ask_input:
-                test_proxies(protocol, TIME_OUT)
+                print("\nProxyfinder has found {} {} proxies, proceeding to testing all of them...".format(x, protocol.upper()))                   
+                test_proxies(protocol, TIME_OUT)    
             else:
-                r = input("Proxyfinder has found {} values\nDo you want to test all of them ? [Y/n]".format(x))
+                r = input("Proxyfinder has found {} {} proxies \nDo you want to test all of them ? [Y/n]".format(x, protocol.upper()))
                 if r == "n":
                     pass
                 else:
@@ -116,14 +126,12 @@ def freeproxyworld():
             exit()
 
 
-def test_proxies(protocol, verbose):
-    global TIME_OUT
+def test_proxies(protocol, TIME_OUT):
+    count = 0
     errors = 0
-    print("Opening connections with {} through {} proxies servers.".format(URL[protocol], len(IP_PORT)))
-    print("Current timeout: {}".format(TIME_OUT))
-    time.sleep(3)
     for i in IP_PORT:
         try:
+            count = count + 1
             # HERE SET THE PROXY IN DICTIONARY (YOU NEED SET THIS IN A DICT OR THIS WILL NOT WORKING)
             # DONT CHANGE THE ENTRY 'https': 'http://' <------here (even if it is not http)
             # I DIDN'T UNDERSTAND, BUT IF YOU ARE INTERESTED YOU MUST READ THIS 
@@ -132,7 +140,8 @@ def test_proxies(protocol, verbose):
                 'http': 'http://' + i,
                 'https': 'http://' + i # DONT CHANGE THE 'http://' EVEN IF IT IS NOT HTTP 
             }
-            print(BOLD + "\n({}://{}) -> {}\n".format(protocol, i, URL[protocol]))
+            print(BOLD + "\n{} of {} proxies tested | ({}://{}) -> {}\n".format(count, len(IP_PORT), protocol, i, URL[protocol]))
+            requests.packages.urllib3.disable_warnings() # IGNORE SSL WARNINGS (FROM NO CERTIFICATE ERRORS)
             resp = requests.post(URL[protocol], proxies=proxy, headers=hdr, timeout=TIME_OUT, verify=False)    
             if resp.status_code == 200:
                 print(GREEN + "{} is UP, received response <200> from {}".format(i, URL[protocol]) + NORMAL)
@@ -149,7 +158,7 @@ def test_proxies(protocol, verbose):
             if (len(IP_PORT) / 2) == errors:
                 if dont_ask_input:
                     print(YELLOW + "Proxyfinder is not finding any expressive result, increasing timeout limit to {}".format(TIME_OUT + 1) + NORMAL)
-                    time.sleep(3)
+                    time.sleep(2)
                     TIME_OUT = TIME_OUT + 1
                 else:
                     ask = input(YELLOW + "Proxyfinder is not finding any expressive result, do you want to increase the timeout limit ? [Y/n]" + NORMAL)
@@ -159,23 +168,44 @@ def test_proxies(protocol, verbose):
                         TIME_OUT = TIME_OUT + 1
                         print("Increasing timeout limit to {}".format(TIME_OUT))
                         time.sleep(2)
-            print(RED, f, NORMAL)
-            print(RED + i + " connection timed out, consider to increase the time search value with""" + YELLOW + " --force (MORE SLOW!)" + NORMAL)
+            if verbose:
+                print(RED, f, NORMAL)
+            if TIME_OUT <= 5:
+                print(RED + i + " connection timed out, consider to increase the time search value with" + YELLOW + " --force (MORE SLOW!)" + NORMAL)
+            else:
+                print(RED + i + " connection timed out, host seems not working" + NORMAL)
     #RETRIEVE THE LENGTH OF VALUES IN HTTP AND HTTPS LIST
-    if protocol == "http":
-        print("\nQuery finished, proxyfinder has found", len(HTTP_ON), "proxy servers online.\n")
-        for r in HTTP_ON:
-            print(GREEN + r + NORMAL + " Anonymity: 4 (Strong)")
-        if not len(HTTP_ON):
-            print(RED + "Appears to be empty results in this search, you must try rerun with --force" + NORMAL)
-            time.sleep(2)
-    if protocol == "https":
-        print("\nFound", len(HTTPS_ON), "proxy servers online.\n")
-        for r in HTTPS_ON:   
-            print(GREEN + r + NORMAL + " Anonymity: 4 (Strong)")
-        if not len(HTTPS_ON):
-            print(RED + "Appears to be empty results in this search, you must try rerun with --force" + NORMAL)
-            time.sleep(2)
+    else:
+        if len(PROTOCOL_LIST) > 1:
+            print("\nProxyfinder finished.\n")
+            for pr in PROTOCOL_LIST:
+                if pr == "http":
+                    for r in HTTP_ON:
+                        print(GREEN + r + NORMAL + " Anonymity: 4 (Strong)\n")
+                if pr == "https":
+                    for h in HTTPS_ON:
+                        print(GREEN + h + NORMAL + " Anonymity: 4 (Strong)\n")
+                if pr == "socks":
+                    for s in SOCKS_ON:
+                        print(GREEN + s + NORMAL + " Anonymity: 4 (Strong)\n")
+        else:
+            if protocol == "http":
+                print("\nFinished, ProxyFinder has found", len(list(HTTP_ON)), "http proxy servers online.\n")
+                time.sleep(3)
+                for r in HTTP_ON:
+                    print(GREEN + r + NORMAL + " Anonymity: 4 (Strong)\n")
+                if not len(HTTP_ON):
+                    print(RED + "Appears to be empty results in this search, you must try rerun with --force" + NORMAL)
+                    time.sleep(2)                
+
+            if protocol == "https":
+                print("\nQuery finished, proxyfinder has found", len(list(HTTPS_ON)), "https proxy servers online.\n")
+                for r in HTTPS_ON:
+                    print(h)
+                    print(GREEN + r + NORMAL + " Anonymity: 4 (Strong)")
+                if not len(HTTPS_ON):
+                    print(RED + "Appears to be empty results in this search, you must try rerun with --force" + NORMAL)
+                    time.sleep(2)
 
 parser = argparse.ArgumentParser(prog="ProxyFinder")
 parser.add_argument('--fast', help='set the server response timeout to 0.5ms', action="store_true")
@@ -185,8 +215,8 @@ parser.add_argument('--https', help='only retrieve HTTPS proxies)', action="stor
 parser.add_argument('--batch', action="store_true", dest="dont_ask_input", help='dont ask user input')
 parser.add_argument('--socks', action="store_true", dest="socks", help="search for socks4 and socks5 proxies")
 parser.add_argument('--all', dest='all', action='store_true', help='activate search for all types of proxies(SOCKS, HTTPS, HTTP)')
+parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help='turn verbosity on')
 args = parser.parse_args()
-
 fast = args.fast
 all = args.all
 dont_ask_input = args.dont_ask_input
@@ -194,6 +224,7 @@ force = args.force
 http = args.http
 https = args.https
 socks = args.socks
+verbose = args.verbose
 
 if fast:
     TIME_OUT = 0.5
@@ -218,6 +249,8 @@ else:
     if socks:
         PROTOCOL_LIST.append('socks4')
         PROTOCOL_LIST.append('socks5')
-    
+
 freeproxyworld()
+
+    
 
