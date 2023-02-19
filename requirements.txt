@@ -1,12 +1,8 @@
 requests
-sys
+lxml
 datetime
-time
 colorama
 argparse
-os
-certifi
 bs4
-threading
 prettytable
 requests[socks]
