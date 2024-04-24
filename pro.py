@@ -117,7 +117,7 @@ def test_proxies(protocol, verbose):
         try:
             # HERE SET THE PROXY IN DICTIONARY (YOU NEED SET THIS IN A DICT OR THIS WILL NOT WORKING)
             # DONT CHANGE THE ENTRY 'https': 'http://' <------here (even if it is not http)
-            # I DIDN'T UNDERSTAND, BUT IF YOU ARE INTERESTED YOU MUST READ THIS 
+            # IF YOU ARE INTERESTED YOU MUST READ THIS 
             # https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html#https-proxy-error-http-proxy
             proxy = {
                 'http': 'http://' + i,

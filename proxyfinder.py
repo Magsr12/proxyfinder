@@ -199,9 +199,8 @@ def test_proxies(protocol, TIME_OUT):
                     time.sleep(2)                
 
             if protocol == "https":
-                print("\nQuery finished, proxyfinder has found", len(list(HTTPS_ON)), "https proxy servers online.\n")
+                print("\nQuery finished, proxyfinder has found", len(list(HTTPS_ON)), "HTTPS proxy servers online.\n")
                 for r in HTTPS_ON:
-                    print(h)
                     print(GREEN + r + NORMAL + " Anonymity: 4 (Strong)")
                 if not len(HTTPS_ON):
                     print(RED + "Appears to be empty results in this search, you must try rerun with --force" + NORMAL)
